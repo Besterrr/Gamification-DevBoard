@@ -2,6 +2,7 @@ import {useAuth} from "../hooks/useAuth.js";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {apiFetch} from "../api/apiClient.js";
+import Notifications from "../components/Notifications.jsx";
 
 const DashboardPage = () => {
     const {logout, accessToken, refreshToken, updateTokens} = useAuth();
@@ -108,7 +109,8 @@ const DashboardPage = () => {
     return (
         <div>
             <h1>Дашборд</h1>
-            <h3>{username}</h3>
+            <h3>{username} <button onClick={() => navigate('/achievements')}>Достижения</button></h3>
+            <Notifications/>
             <p>Level: {level}; XP: {xp}</p>
             {!error && projects.length === 0 && <p style={{ color: 'green' }}>У тебя пока нет проектов</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const {checkAndAwardAchievements} = require('../services/achievementService')
 
 async function getTasks(req, res){
     try{
@@ -16,7 +17,7 @@ async function createTask(req, res){
         const title = req.body.title;
         const description = req.body.description;
         const priority = req.body.priority;
-        const status = req.body.status;
+        const status = req.body.status || 'todo';
         const deadline = req.body.deadline;
         if(!title){
             return res.status(400).json({message:'Нет такого заголовка'});
@@ -44,8 +45,8 @@ async function updateTask(req, res){
         }
         if(currentState.rows[0].status !== 'done'){
             if(task.rows[0].status === 'done'){
-                const xpReward = task.rows[0].xp_reward;
                 const userId = req.user.id;
+                const xpReward = task.rows[0].xp_reward;
                 await pool.query('UPDATE users SET xp = xp + $1 WHERE id = $2', [xpReward, userId]);
                 const userData = await pool.query('SELECT xp, level FROM users WHERE id = $1', [userId]);
                 const level = userData.rows[0].level;
@@ -54,6 +55,7 @@ async function updateTask(req, res){
                 if(xp >= xpLimit){
                     await pool.query('UPDATE users SET level = level + 1 WHERE id = $1 ', [userId]);
                 }
+                await checkAndAwardAchievements(userId);
             }
         }
         return res.status(200).json({task: task.rows[0]});
