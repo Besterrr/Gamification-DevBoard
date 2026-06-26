@@ -3,6 +3,8 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {apiFetch} from "../api/apiClient.js";
 import Notifications from "../components/Notifications.jsx";
+import ActivityChart from "../components/ActivityChart.jsx";
+import Heatmap from "../components/Heatmap.jsx";
 
 const DashboardPage = () => {
     const {logout, accessToken, refreshToken, updateTokens} = useAuth();
@@ -131,6 +133,11 @@ const DashboardPage = () => {
             </ul>
             <button onClick={() => navigate('/addProject')}>Добавить новый проект</button>
             <button onClick={logout}>Выйти из учётной записи</button>
+            <ActivityChart/>
+            <hr/>
+            <div style={{ marginBottom:'100px'}}>
+                <Heatmap/>
+            </div>
         </div>
     );
 };

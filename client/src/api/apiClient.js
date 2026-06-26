@@ -38,3 +38,17 @@ export async function fetchProjectStats(id, accessToken, refreshToken, updateTok
     }
     return data;
 }
+
+export async function fetchUserStats(days, accessToken, refreshToken, updateTokens, logout){
+    const response = await apiFetch(`http://localhost:5000/api/stats/activity?days=${days}`,
+        {method: 'GET'},
+        accessToken,
+        refreshToken,
+        updateTokens,
+        logout)
+    const data = await response.json();
+    if(!response.ok){
+        throw new Error(data.message);
+    }
+    return data;
+}

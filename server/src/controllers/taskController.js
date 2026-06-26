@@ -27,7 +27,6 @@ async function createTask(req, res){
     }catch(e){
         res.status(500).json({message: e.message});
     }
-
 }
 
 async function updateTask(req, res){
@@ -47,6 +46,7 @@ async function updateTask(req, res){
             if(task.rows[0].status === 'done'){
                 const userId = req.user.id;
                 const xpReward = task.rows[0].xp_reward;
+                await pool.query('UPDATE tasks SET completed_at = NOW() WHERE id = $1', [id]);
                 await pool.query('UPDATE users SET xp = xp + $1 WHERE id = $2', [xpReward, userId]);
                 const userData = await pool.query('SELECT xp, level FROM users WHERE id = $1', [userId]);
                 const level = userData.rows[0].level;

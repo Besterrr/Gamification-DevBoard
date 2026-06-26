@@ -2,11 +2,7 @@ const pool = require('../config/db');
 
 async function checkDeadlines(io, userSockets){
     try{
-        console.log('NOW:', new Date());
-        const result = await pool.query('SELECT t.*, p.user_id as user_id FROM tasks t JOIN projects p ON t.project_id = p.id WHERE t.deadline BETWEEN NOW() AND NOW() + INTERVAL \'24 hours\' AND t.status != \'done\'')
-        console.log('Найдено задач:', result.rows);
-        console.log('Найдено задач с дедлайном:', result.rows.length);
-        console.log('Подключённые пользователи:', userSockets);
+        const result = await pool.query('SELECT t.*, p.user_id as user_id FROM tasks t JOIN projects p ON t.project_id = p.id WHERE t.deadline BETWEEN NOW() AND NOW() + INTERVAL \'24 hours\' AND t.status != \'done\'');
         result.rows.forEach(task => {
             const userId = task.user_id;
             console.log('Задача:', task.title, 'userId:', task.user_id);
