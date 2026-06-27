@@ -18,6 +18,7 @@ const DashboardPage = () => {
     const [xp, setXP] = useState(0);
     const [level, setLevel] = useState(1);
     const [username, setUsername] = useState('User');
+    const [avatar, setAvatar] = useState(null);
 
     useEffect(() => {
         async function fetchProjects() {
@@ -43,6 +44,7 @@ const DashboardPage = () => {
                 return;
             }
             setProjects(projectData.projects);
+            setAvatar(userData.user.avatar_url);
             setUsername(userData.user.username);
             setXP(userData.user.xp);
             setLevel(userData.user.level);
@@ -104,6 +106,27 @@ const DashboardPage = () => {
         setEditingId(null);
     }
 
+    async function handleAvatarUpload(e){
+        const file = e.target.files[0];
+        if(!file){
+            return
+        }
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const response = await apiFetch('http://localhost:5000/api/users/avatar',
+            {method: "POST", body: formData},
+            accessToken,
+            refreshToken,
+            updateTokens,
+            logout)
+        const data = await response.json();
+        if(!response.ok) {
+            setError(data.message);
+            return;
+        }
+        setAvatar(data.avatarUrl);
+    }
+
     if(loading){
         return <p>Загрузка...</p>
     }
@@ -111,11 +134,15 @@ const DashboardPage = () => {
     return (
         <div>
             <h1>Дашборд</h1>
-            <h3>{username} <button onClick={() => navigate('/achievements')}>Достижения</button></h3>
+            <h3>{username}
+                <button onClick={() => navigate('/achievements')}>Достижения</button>
+            </h3>
+            {avatar ? <img style={{width: '50px'}} src={'http://localhost:5000' + avatar} alt="Аватар"/> : <p>👤</p>}
+            <input type="file" accept="image/*" onChange={(e)=> handleAvatarUpload(e)} />
             <Notifications/>
             <p>Level: {level}; XP: {xp}</p>
-            {!error && projects.length === 0 && <p style={{ color: 'green' }}>У тебя пока нет проектов</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {!error && projects.length === 0 && <p style={{color: 'green'}}>У тебя пока нет проектов</p>}
+            {error && <p style={{color: 'red'}}>{error}</p>}
             <ul>
                 {projects.map(project => (
                     <li key={project.id}>
@@ -123,11 +150,13 @@ const DashboardPage = () => {
                         <div onClick={() => handleDelete(project.id)}>❌</div>
                         <div onClick={() => handleEdit(project)}>✏️</div>
                         {editingId === project.id && <form onSubmit={(e) => handleUpdate(e)}>
-                            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-                            <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+                            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}/>
+                            <input type="text" value={editDescription}
+                                   onChange={(e) => setEditDescription(e.target.value)}/>
                             <button type="submit">Обновить</button>
                         </form>}
-                        <div onClick={() => navigate(`/project/${project.id}`)}>Добавить задачи</div>️️
+                        <div onClick={() => navigate(`/project/${project.id}`)}>Добавить задачи</div>
+                        ️️
                     </li>
                 ))}
             </ul>
@@ -135,7 +164,7 @@ const DashboardPage = () => {
             <button onClick={logout}>Выйти из учётной записи</button>
             <ActivityChart/>
             <hr/>
-            <div style={{ marginBottom:'100px'}}>
+            <div style={{marginBottom: '100px'}}>
                 <Heatmap/>
             </div>
         </div>

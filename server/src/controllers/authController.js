@@ -71,7 +71,7 @@ async function refresh(req, res) {
 async function getUserData(req,res){
     try{
         const userId = req.user.id;
-        const data = await pool.query('SELECT id, username, email, xp, level FROM users WHERE id = $1', [userId]);
+        const data = await pool.query('SELECT id, username, email, xp, level, avatar_url FROM users WHERE id = $1', [userId]);
         if(data.rows.length === 0){
             return res.status(401).json({message: 'Пользователя с таким id не найдено'})
         }

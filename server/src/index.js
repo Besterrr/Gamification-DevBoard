@@ -1,4 +1,6 @@
 require('dotenv').config();
+const path = require('path');
+
 const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
@@ -8,6 +10,8 @@ const projectRoutes = require('./routes/projectRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const userRoutes = require('./routes/userRoutes');
+
 const { checkDeadlines } = require('./services/notificationService');
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -25,7 +29,8 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
-
+app.use('/api/users', userRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/projects', projectRoutes);
@@ -39,6 +44,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/protected', authMiddleware, (req, res) => {
     res.json({ message: 'Ты внутри!', user: req.user });
 });
+
 
 pool.query('SELECT NOW()', (err, res) => {
     if (err) {
