@@ -4,8 +4,46 @@ const {checkAndAwardAchievements} = require('../services/achievementService')
 async function getTasks(req, res){
     try{
         const project_id = req.params.projectId;
-        const tasks = await pool.query('SELECT * FROM tasks WHERE project_id = $1', [project_id]);
-        return res.status(200).json({tasks: tasks.rows});
+        const { search, status, priority } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const conditions = ['project_id = $1'];
+        const params = [project_id];
+
+        if (search) {
+            params.push(`%${search}%`);
+            conditions.push(`title ILIKE $${params.length}`);
+        }
+        if (status) {
+            params.push(status);
+            conditions.push(`status = $${params.length}`);
+        }
+        if (priority) {
+            params.push(priority);
+            conditions.push(`priority = $${params.length}`);
+        }
+
+        const where = conditions.join(' AND ');
+
+        const countResult = await pool.query(
+            `SELECT COUNT(*) FROM tasks WHERE ${where}`,
+            params
+        );
+        const total = parseInt(countResult.rows[0].count);
+
+        const tasksResult = await pool.query(
+            `SELECT * FROM tasks WHERE ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+            [...params, limit, offset]
+        );
+
+        return res.status(200).json({
+            tasks: tasksResult.rows,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
     }catch(e){
         res.status(500).json({message: e.message});
     }

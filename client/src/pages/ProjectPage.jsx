@@ -1,5 +1,5 @@
 import {useNavigate, useParams} from 'react-router-dom'
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {apiFetch, fetchProjectStats} from "../api/apiClient.js";
 import {useAuth} from "../hooks/useAuth.js";
 import AddTasksForm from "../components/AddTasksForm.jsx";
@@ -14,46 +14,61 @@ const ProjectPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [stats, setStats] = useState(0);
+    const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] = useState("");
+    const [filterPriority, setFilterPriority] = useState("");
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const fetchTasks = useCallback(async (search, filterStatus, filterPriority, page) => {
+        const params = new URLSearchParams();
+        params.append('page', page);
+        params.append('limit', 10);
+        if(search) params.append('search', search);
+        if(filterStatus) params.append('status', filterStatus);
+        if (filterPriority) params.append('priority', filterPriority);
+        const url = `http://localhost:5000/api/projects/${id}/tasks?${params.toString()}`;
+
+        const [projectResponse, tasksResponse, statsResponse] = await Promise.all([
+            apiFetch(`http://localhost:5000/api/projects/${id}`,
+                {method: 'GET'},
+                accessToken,
+                refreshToken,
+                updateTokens,
+                logout
+            ),
+            apiFetch(url,
+                {method: 'GET'},
+                accessToken,
+                refreshToken,
+                updateTokens,
+                logout
+            ),
+            apiFetch(`http://localhost:5000/api/projects/${id}/stats`,
+                {method: 'GET'},
+                accessToken,
+                refreshToken,
+                updateTokens,
+                logout)
+        ]);
+        const projectData = await projectResponse.json();
+        const tasksData = await tasksResponse.json();
+        const statsData = await statsResponse.json();
+        if (!projectResponse.ok || !tasksResponse.ok || !statsResponse.ok) {
+            setError('Ошибка загрузки данных');
+            setLoading(false);
+            return;
+        }
+        setProject(projectData.project);
+        setTasks(tasksData.tasks);
+        setLoading(false);
+        setStats(statsData.stats);
+        setTotalPages(tasksData.totalPages);
+    }, [id, accessToken, refreshToken]);
 
     useEffect(() => {
-        async function fetchTasks() {
-            const [projectResponse, tasksResponse, statsResponse] = await Promise.all([
-                apiFetch(`http://localhost:5000/api/projects/${id}`,
-                    {method: 'GET'},
-                    accessToken,
-                    refreshToken,
-                    updateTokens,
-                    logout
-                ),
-                apiFetch(`http://localhost:5000/api/projects/${id}/tasks`,
-                    {method: 'GET'},
-                    accessToken,
-                    refreshToken,
-                    updateTokens,
-                    logout
-                ),
-                apiFetch(`http://localhost:5000/api/projects/${id}/stats`,
-                    {method: 'GET'},
-                    accessToken,
-                    refreshToken,
-                    updateTokens,
-                    logout)
-            ]);
-            const projectData = await projectResponse.json();
-            const tasksData = await tasksResponse.json();
-            const statsData = await statsResponse.json();
-            if (!projectResponse.ok || !tasksResponse.ok || !statsResponse.ok) {
-                setError('Ошибка загрузки данных');
-                setLoading(false);
-                return;
-            }
-            setProject(projectData.project);
-            setTasks(tasksData.tasks);
-            setLoading(false);
-            setStats(statsData.stats);
-        }
-        fetchTasks();
-    },[id, accessToken, refreshToken, updateTokens, logout]);
+        fetchTasks(search, filterStatus, filterPriority, page);
+    }, [fetchTasks, search, filterStatus, filterPriority, page]);
 
     async function handleCreateTask(title, description, priority) {
         const response = await apiFetch(`http://localhost:5000/api/projects/${id}/tasks`,
@@ -141,6 +156,25 @@ const ProjectPage = () => {
                 <h1>{project.title}</h1>
                 <p>{project.description}</p>
                 <p>Задач всего: {stats.total} Выполнено: {stats.completed}</p>
+                <input
+                    type="text"
+                    placeholder="Поиск по задачам"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                />
+                <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}>
+                    <option value="">Все статусы</option>
+                    <option value="todo">todo</option>
+                    <option value="inProgress">in progress</option>
+                    <option value="done">done</option>
+                </select>
+
+                <select value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}>
+                    <option value="">Все приоритеты</option>
+                    <option value="low">low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
+                </select>
                 {tasks.map(task => (
                     <div key = {task.id}>
                         <p>{task.title}: {task.priority}</p>
@@ -159,6 +193,9 @@ const ProjectPage = () => {
                 {showForm && <AddTasksForm addTask = {handleCreateTask} showForm={true}/>}
                 {showForm && <button onClick={() => setShowForm(false)}>Отмена</button>}
             </div>
+            <button onClick={() => setPage(p => p - 1)} disabled={page === 1}>Назад</button>
+            <span>{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>Вперёд</button>
         </>
     );
 };
