@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "../hooks/useAuth.js";
+import api from "../api/axiosClient.js";
 
 const LoginPage = () => {
 
@@ -12,23 +13,16 @@ const LoginPage = () => {
 
     async function handleSubmit(e) {
         e.preventDefault();
-
-        const response = await fetch("http://localhost:5000/api/auth/login", {
-            method: "POST",
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({email, password})
-        });
-        const data = await response.json();
-
-        if(!response.ok){
-            setError(data.message);
-            return;
+        try{
+            const response = await api.post(`/api/auth/login`, {email, password});
+            const user = response.data.user;
+            const accessToken = response.data.accessToken;
+            const refreshToken = response.data.refreshToken;
+            login(user, accessToken, refreshToken);
+            navigate("/");
+        }catch(e){
+            setError(e.message);
         }
-        const user = data.user;
-        const accessToken = data.accessToken;
-        const refreshToken = data.refreshToken;
-        login(user, accessToken, refreshToken);
-        navigate("/");
     }
 
     return (

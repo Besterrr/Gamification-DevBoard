@@ -1,33 +1,24 @@
 import {useEffect, useState} from "react";
-import {apiFetch} from "../api/apiClient.js";
-import {useAuth} from "../hooks/useAuth.js";
+import api from "../api/axiosClient.js";
 
 const AchievementsPage = () => {
     const [achievements, setAchievements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const {logout, accessToken, refreshToken, updateTokens} = useAuth();
 
     useEffect(() => {
         async function fetchAchievements() {
-            const response = await apiFetch(`http://localhost:5000/api/achievements`,
-                {method: 'GET'},
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout
-            );
-            const achievementsData = await response.json();
-            if(!response.ok){
-                setError('Ошибка загрузки данных');
+            try{
+                const response = await api.get(`/api/achievements`);
+                setAchievements(response.data.achievements);
                 setLoading(false);
-                return;
+            }catch(e){
+                setError(e.message);
+                setLoading(false);
             }
-            setAchievements(achievementsData.achievements);
-            setLoading(false);
         }
         fetchAchievements();
-    }, [accessToken, refreshToken, updateTokens, logout]);
+    }, []);
 
     if (loading) return <p>Загрузка...</p>
 

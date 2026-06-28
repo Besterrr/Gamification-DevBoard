@@ -1,37 +1,23 @@
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
-import {useAuth} from "../hooks/useAuth.js";
-import {apiFetch} from "../api/apiClient.js";
+import api from "../api/axiosClient.js";
 
 const AddNewProjectPage = () => {
     const navigate = useNavigate();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [error, setError] = useState(null);
-    const {accessToken, refreshToken, updateTokens, logout} = useAuth();
 
     async function handleSubmit(e) {
         e.preventDefault();
-        const response = await apiFetch(
-            "http://localhost:5000/api/projects",
-            {
-                method: "POST",
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, description })
-            },
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout
-        );
-        const data = await response.json();
-        if(!response.ok){
-            setError(data.message)
-            return
+        try{
+            await api.post(`/api/projects`,{ title, description });
+            setTitle('');
+            setDescription('');
+            navigate("/");
+        }catch(e){
+            setError(e.message);
         }
-        setTitle('');
-        setDescription('');
-        navigate("/");
     }
 
     return (

@@ -1,14 +1,15 @@
 import {useNavigate, useParams} from 'react-router-dom'
 import {useCallback, useEffect, useState} from "react";
-import {apiFetch, fetchProjectStats} from "../api/apiClient.js";
+import {fetchProjectStats} from "../api/apiClient.js";
 import {useAuth} from "../hooks/useAuth.js";
 import AddTasksForm from "../components/AddTasksForm.jsx";
+import api from "../api/axiosClient.js";
 
 const ProjectPage = () => {
     const navigate = useNavigate();
     const [showForm, setShowForm] = useState(false);
     const {id} = useParams();
-    const {logout, accessToken, refreshToken, updateTokens} = useAuth();
+    const {logout} = useAuth();
     const [project, setProject] = useState(null)
     const [tasks, setTasks] = useState([])
     const [loading, setLoading] = useState(true);
@@ -23,19 +24,13 @@ const ProjectPage = () => {
     const [attachments, setAttachments] = useState({[id]: []});
 
    async function fetchAttachments(taskId) {
-        const response = await apiFetch(`http://localhost:5000/api/tasks/${taskId}/attachments`, {
-            method: 'GET',},
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout)
-        const data = await response.json();
-        if(!response.ok) {
-            setError('Ошибка загрузки данных');
-            setLoading(false);
-            return;
-        }
-        setAttachments(prev => ({...prev, [taskId]: data.attachments}));
+       try{
+           const response = await api.get(`/api/tasks/${taskId}/attachments`)
+           setAttachments(prev => ({...prev, [taskId]: response.data.attachments}));
+       }catch (e) {
+           setError(e.message);
+           setLoading(false);
+       }
     }
 
     const fetchTasks = useCallback(async (search, filterStatus, filterPriority, page) => {
@@ -45,70 +40,40 @@ const ProjectPage = () => {
         if(search) params.append('search', search);
         if(filterStatus) params.append('status', filterStatus);
         if (filterPriority) params.append('priority', filterPriority);
-        const url = `http://localhost:5000/api/projects/${id}/tasks?${params.toString()}`;
-
-        const [projectResponse, tasksResponse, statsResponse] = await Promise.all([
-            apiFetch(`http://localhost:5000/api/projects/${id}`,
-                {method: 'GET'},
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout
-            ),
-            apiFetch(url,
-                {method: 'GET'},
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout
-            ),
-            apiFetch(`http://localhost:5000/api/projects/${id}/stats`,
-                {method: 'GET'},
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout)
-        ]);
-        const projectData = await projectResponse.json();
-        const tasksData = await tasksResponse.json();
-        const statsData = await statsResponse.json();
-        if (!projectResponse.ok || !tasksResponse.ok || !statsResponse.ok) {
-            setError('Ошибка загрузки данных');
+        const url = `/api/projects/${id}/tasks?${params.toString()}`;
+        try{
+            const [projectResponse, tasksResponse, statsResponse] = await Promise.all([
+                api.get(`/api/projects/${id}`),
+                api.get(url),
+                api.get(`/api/projects/${id}/stats`)
+            ]);
+            setProject(projectResponse.data.project);
+            setTasks(tasksResponse.data.tasks);
+            setTotalPages(tasksResponse.data.totalPages);
+            setStats(statsResponse.data.stats);
             setLoading(false);
-            return;
+        }catch (e) {
+            setError(e.message);
+            setLoading(false);
         }
-        setProject(projectData.project);
-        setTasks(tasksData.tasks);
-        setLoading(false);
-        setStats(statsData.stats);
-        setTotalPages(tasksData.totalPages);
-    }, [id, accessToken, refreshToken]);
+    }, [id]);
 
     useEffect(() => {
         fetchTasks(search, filterStatus, filterPriority, page);
     }, [fetchTasks, search, filterStatus, filterPriority, page]);
 
     async function handleCreateTask(title, description, priority) {
-        const response = await apiFetch(`http://localhost:5000/api/projects/${id}/tasks`,
-            {method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, description, priority })},
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout
-        )
-        const data = await response.json();
-        if(!response.ok) {
-            setError(data.message);
-            setLoading(false);
+        try{
+            const response = await api.post(`/api/projects/${id}/tasks`,{title, description, priority});
+            setShowForm(false)
+            setTasks(tasks => [...tasks, response.data.task]);
+            const statsData = await fetchProjectStats(id)
+            setStats(statsData.stats);
             setShowForm(false);
-            return;
+        }catch (e) {
+            setError(e.message);
+            setLoading(false);
         }
-        setShowForm(false);
-        setTasks(tasks => [...tasks, data.task]);
-        const statsData = await fetchProjectStats(id, accessToken, refreshToken, updateTokens, logout);
-        setStats(statsData.stats);
     }
 
     async function handleTaskClick(taskId){
@@ -123,73 +88,50 @@ const ProjectPage = () => {
     async function handleUploadFile(taskId, file){
         const formData = new FormData();
         formData.append('file', file);
-        const response = await apiFetch(`http://localhost:5000/api/tasks/${taskId}/attachments`,{
-            method: 'POST',
-            body: formData
-            },
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout)
-        const data = await response.json();
-        if(!response.ok) {
-            setError(data.message);
+        try{
+            await api.post(`/api/tasks/${taskId}/attachments`, formData)
+            await fetchAttachments(taskId);
+        }catch (e) {
+            setError(e.message);
             setLoading(false);
-            return;
         }
-        await fetchAttachments(taskId);
     }
 
     async function handleDeleteTask(removedId) {
         if(window.confirm('Точно хочешь удалить задачу?')) {
-            const response = await apiFetch(
-                `http://localhost:5000/api/tasks/${removedId}`,
-                { method: "DELETE" },
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout
-            );
-            const data = await response.json();
-            if(!response.ok) {
-                setError(data.message);
-                return;
+            try{
+                await api.delete(`/api/tasks/${removedId}`);
+                setTasks(tasks => tasks.filter(task => task.id !== removedId));
+                const statsData = await fetchProjectStats(id,logout);
+                setStats(statsData.stats);
+            }catch (e) {
+                setError(e.message);
+                setLoading(false);
             }
-            setTasks(tasks => tasks.filter(task => task.id !== removedId));
-            const statsData = await fetchProjectStats(id, accessToken, refreshToken, updateTokens, logout);
-            setStats(statsData.stats);
         }
     }
 
     async function handleUpdateTask(updatedId, status) {
-        const currentTask = tasks.find((task) => task.id === updatedId);
-        const title = currentTask.title;
-        const description = currentTask.description;
-        const priority = currentTask.priority;
-        const deadline = currentTask.deadline;
-        const response = await apiFetch(`http://localhost:5000/api/tasks/${updatedId}`,
-            {method: 'PUT',
-                    headers: { 'Content-Type': 'application/json'},
-                    body: JSON.stringify({title, description, priority, status, deadline}),},
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout
-        );
-        const data = await response.json();
-        if(!response.ok) {
-            setError(data.message);
-            return;
+        try{
+            const currentTask = tasks.find((task) => task.id === updatedId);
+            const title = currentTask.title;
+            const description = currentTask.description;
+            const priority = currentTask.priority;
+            const deadline = currentTask.deadline;
+            const response = await api.put(`/api/tasks/${updatedId}`, {title, description, priority, status, deadline})
+            const updatedTasks = tasks.map((task) => {
+                if(task.id === updatedId) {
+                    return response.data.task;
+                }
+                return task;
+            })
+            setTasks(updatedTasks);
+            const statsData = await fetchProjectStats(id,logout);
+            setStats(statsData.stats);
+        }catch (e) {
+            setError(e.message);
+            setLoading(false);
         }
-       const updatedTasks = tasks.map((task) => {
-            if(task.id === updatedId) {
-                return data.task;
-            }
-            return task;
-        })
-        setTasks(updatedTasks);
-        const statsData = await fetchProjectStats(id, accessToken, refreshToken, updateTokens, logout);
-        setStats(statsData.stats);
     }
 
     if(loading){

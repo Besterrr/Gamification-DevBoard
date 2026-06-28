@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {useAuth} from "../hooks/useAuth.js";
 import {useNavigate} from "react-router-dom";
+import api from "../api/axiosClient.js";
 
 const RegisterPage = () => {
 
@@ -13,22 +14,16 @@ const RegisterPage = () => {
 
     async function handleSubmit(e) {
         e.preventDefault();
-
-        const response = await fetch('http://localhost:5000/api/auth/register', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({email, username, password})
-        });
-        const data = await response.json();
-        if(!response.ok){
-            setError(data.message);
-            return;
+        try{
+            const response = await api.post(`/api/auth/register`, {email, username, password})
+            const user = response.data.newUser;
+            const accessToken = response.data.accessToken;
+            const refreshToken = response.data.refreshToken;
+            login(user, accessToken, refreshToken);
+            navigate("/")
+        }catch (e) {
+            setError(e.message);
         }
-        const user = data.newUser;
-        const accessToken = data.accessToken;
-        const refreshToken = data.refreshToken;
-        login(user, accessToken, refreshToken);
-        navigate("/")
     }
 
     return (

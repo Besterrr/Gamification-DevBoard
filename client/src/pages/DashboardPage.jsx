@@ -1,13 +1,14 @@
 import {useAuth} from "../hooks/useAuth.js";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {apiFetch} from "../api/apiClient.js";
 import Notifications from "../components/Notifications.jsx";
 import ActivityChart from "../components/ActivityChart.jsx";
 import Heatmap from "../components/Heatmap.jsx";
+import api from "../api/axiosClient.js";
+import {useDarkMode} from "../hooks/useDarkMode.js";
 
 const DashboardPage = () => {
-    const {logout, accessToken, refreshToken, updateTokens} = useAuth();
+    const {logout} = useAuth();
     const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,56 +20,38 @@ const DashboardPage = () => {
     const [level, setLevel] = useState(1);
     const [username, setUsername] = useState('User');
     const [avatar, setAvatar] = useState(null);
+    const { isDark, toggleDark } = useDarkMode();
 
     useEffect(() => {
         async function fetchProjects() {
-            const [projectResponse, userDataResponse] = await Promise.all([
-                apiFetch(`http://localhost:5000/api/projects`,
-                { method: "GET" },
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout),
-                apiFetch(`http://localhost:5000/api/auth/me`,
-                    {method: "GET"},
-                    accessToken,
-                    refreshToken,
-                    updateTokens,
-                    logout)
-            ]);
-            const projectData = await projectResponse.json();
-            const userData = await userDataResponse.json();
-            if(!projectResponse.ok || !userDataResponse.ok) {
-                setError({message: "Ошибка загрузки данных"});
+            try{
+                const [projectResponse, userDataResponse] = await Promise.all([
+                    api.get('/api/projects'),
+                    api.get('/api/auth/me')
+                ]);
+                setProjects(projectResponse.data.projects);
+                setUsername(userDataResponse.data.user.username);
+                setAvatar(userDataResponse.data.user.avatar_url);
+                setXP(userDataResponse.data.user.xp);
+                setLevel(userDataResponse.data.user.level);
                 setLoading(false);
-                return;
+            }catch(e){
+                setError(e.message);
+                setLoading(false);
             }
-            setProjects(projectData.projects);
-            setAvatar(userData.user.avatar_url);
-            setUsername(userData.user.username);
-            setXP(userData.user.xp);
-            setLevel(userData.user.level);
-            setLoading(false);
         }
         fetchProjects();
-    }, [accessToken,refreshToken, updateTokens, logout])
+    }, [])
 
    async function handleDelete(removedId) {
        if(window.confirm('Точно хочешь удалить проект?')) {
-           const response = await apiFetch(
-               `http://localhost:5000/api/projects/${removedId}`,
-               { method: "DELETE" },
-               accessToken,
-               refreshToken,
-               updateTokens,
-               logout
-           );
-            const data = await response.json();
-            if(!response.ok) {
-                setError(data.message);
-                return;
-            }
-            setProjects(projects => projects.filter(project => project.id !== removedId));
+           try{
+               await api.delete(`/api/projects/${removedId}`);
+               setProjects(projects => projects.filter(project => project.id !== removedId));
+           }catch(e){
+               setError(e.message);
+               setLoading(false);
+           }
         }
     }
 
@@ -80,30 +63,22 @@ const DashboardPage = () => {
 
     async function handleUpdate(e){
         e.preventDefault();
-        const response = await apiFetch(`http://localhost:5000/api/projects/${editingId}`,
-            { method: "PUT",
-                headers: { 'Content-Type': 'application/json'},
-                body: JSON.stringify ({title: editTitle, description: editDescription}), },
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout
-        )
-        const data = await response.json();
-        if(!response.ok) {
-            setError(data.message);
-            return;
+        try{
+           const response = await api.put(`/api/projects/${editingId}`,{title: editTitle, description: editDescription})
+            const updatedProjects = projects.map((project) => {
+                if(project.id === editingId) {
+                    return response.data.project;
+                }
+                return project;
+            })
+            setEditTitle('')
+            setEditDescription('')
+            setProjects(updatedProjects);
+            setEditingId(null);
+        }catch(e){
+            setError(e.message);
+            setLoading(false);
         }
-        const updatedProjects = projects.map((project) => {
-            if(project.id === editingId) {
-                return data.project;
-            }
-            return project;
-        })
-        setEditTitle('')
-        setEditDescription('')
-        setProjects(updatedProjects);
-        setEditingId(null);
     }
 
     async function handleAvatarUpload(e){
@@ -113,18 +88,13 @@ const DashboardPage = () => {
         }
         const formData = new FormData();
         formData.append('avatar', file);
-        const response = await apiFetch('http://localhost:5000/api/users/avatar',
-            {method: "POST", body: formData},
-            accessToken,
-            refreshToken,
-            updateTokens,
-            logout)
-        const data = await response.json();
-        if(!response.ok) {
-            setError(data.message);
-            return;
+        try{
+            const response = await api.post(`/api/users/avatar`, formData)
+            setAvatar(response.data.avatarUrl);
+        }catch(e){
+            setError(e.message);
+            setLoading(false);
         }
-        setAvatar(data.avatarUrl);
     }
 
     if(loading){
@@ -132,39 +102,71 @@ const DashboardPage = () => {
     }
 
     return (
-        <div>
-            <h1>Дашборд</h1>
-            <h3>{username}
-                <button onClick={() => navigate('/achievements')}>Достижения</button>
-            </h3>
-            {avatar ? <img style={{width: '50px'}} src={'http://localhost:5000' + avatar} alt="Аватар"/> : <p>👤</p>}
-            <input type="file" accept="image/*" onChange={(e)=> handleAvatarUpload(e)} />
+        <div className="dashboard">
+            <header className="dashboard__header">
+                <h1 className="dashboard__title">DevBoard</h1>
+                <button className="theme-toggle" onClick={toggleDark}>
+                    {isDark ? '☀️' : '🌙'}
+                </button>
+            </header>
+
+            <div className="dashboard__profile">
+                <div className="dashboard__avatar">
+                    {avatar
+                        ? <img src={'http://localhost:5000' + avatar} alt="Аватар"/>
+                        : <span>👤</span>
+                    }
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} />
+                </div>
+                <div className="dashboard__user-info">
+                    <h3>{username}</h3>
+                    <p>Level: {level} · XP: {xp}</p>
+                </div>
+                <div className="dashboard__actions">
+                    <button onClick={() => navigate('/achievements')}>Достижения</button>
+                    <button onClick={logout}>Выйти</button>
+                </div>
+            </div>
+
             <Notifications/>
-            <p>Level: {level}; XP: {xp}</p>
-            {!error && projects.length === 0 && <p style={{color: 'green'}}>У тебя пока нет проектов</p>}
-            {error && <p style={{color: 'red'}}>{error}</p>}
-            <ul>
-                {projects.map(project => (
-                    <li key={project.id}>
-                        {project.title} — {project.description}
-                        <div onClick={() => handleDelete(project.id)}>❌</div>
-                        <div onClick={() => handleEdit(project)}>✏️</div>
-                        {editingId === project.id && <form onSubmit={(e) => handleUpdate(e)}>
-                            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}/>
-                            <input type="text" value={editDescription}
-                                   onChange={(e) => setEditDescription(e.target.value)}/>
-                            <button type="submit">Обновить</button>
-                        </form>}
-                        <div onClick={() => navigate(`/project/${project.id}`)}>Добавить задачи</div>
-                        ️️
-                    </li>
-                ))}
-            </ul>
-            <button onClick={() => navigate('/addProject')}>Добавить новый проект</button>
-            <button onClick={logout}>Выйти из учётной записи</button>
-            <ActivityChart/>
-            <hr/>
-            <div style={{marginBottom: '100px'}}>
+
+            {error && <p className="error">{error}</p>}
+
+            <div className="dashboard__projects">
+                <div className="dashboard__projects-header">
+                    <h2>Мои проекты</h2>
+                    <button onClick={() => navigate('/addProject')}>+ Новый проект</button>
+                </div>
+                {projects.length === 0
+                    ? <p className="dashboard__empty">У тебя пока нет проектов</p>
+                    : <ul className="project-list">
+                        {projects.map(project => (
+                            <li key={project.id} className="project-card">
+                                <div className="project-card__content" onClick={() => navigate(`/project/${project.id}`)}>
+                                    <h3>{project.title}</h3>
+                                    <p>{project.description}</p>
+                                </div>
+                                <div className="project-card__actions">
+                                    <button onClick={() => handleEdit(project)}>✏️</button>
+                                    <button onClick={() => handleDelete(project.id)}>❌</button>
+                                </div>
+                                {editingId === project.id &&
+                                    <form className="project-card__edit-form" onSubmit={handleUpdate}>
+                                        <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Название"/>
+                                        <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Описание"/>
+                                        <button type="submit">Обновить</button>
+                                    </form>
+                                }
+                            </li>
+                        ))}
+                    </ul>
+                }
+            </div>
+
+            <div className="dashboard__activity">
+                <h2>Активность</h2>
+                <ActivityChart/>
+                <hr/>
                 <Heatmap/>
             </div>
         </div>

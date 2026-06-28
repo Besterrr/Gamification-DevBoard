@@ -9,31 +9,22 @@ import AddNewProjectPage from "./pages/AddNewProjectPage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
 import AchievementsPage from "./pages/AchievementsPage.jsx";
 import {useEffect} from "react";
-import {apiFetch} from "./api/apiClient.js";
 import {useAuth} from "./hooks/useAuth.js";
 import socket from "./socket.js";
-
+import api, { setupInterceptors } from './api/axiosClient.js';
 
 function App() {
     const {logout, accessToken, refreshToken, updateTokens} = useAuth();
+
+    setupInterceptors(accessToken, refreshToken, updateTokens, logout);
 
     useEffect(() => {
         if(!accessToken) return;
 
         async function fetchUser() {
-            const data = await apiFetch('http://localhost:5000/api/auth/me',
-                { method: "GET" },
-                accessToken,
-                refreshToken,
-                updateTokens,
-                logout
-            );
-            const userData = await data.json();
-            console.log('userData:', userData);
-            if(data.ok){
-                console.log('Emitting register:', userData.user.id);
-                socket.emit('register', userData.user.id);
-            }
+            const response = await api.get('/api/auth/me');
+            console.log('userData:', response.data);
+            socket.emit('register', response.data.user.id);
         }
         fetchUser();
     }, [accessToken]);
