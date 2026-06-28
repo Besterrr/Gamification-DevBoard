@@ -11,6 +11,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const userRoutes = require('./routes/userRoutes');
+const attachmentRoutes = require('./routes/attachmentRoutes');
 
 const { checkDeadlines } = require('./services/notificationService');
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api', taskRoutes);
 app.use('/api/achievements', achievementRoutes);
+app.use('/api', attachmentRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });

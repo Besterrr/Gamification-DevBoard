@@ -1,7 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 
-const storage = multer.diskStorage({
+const storageAvatar = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, path.join(__dirname, '../../uploads/avatars/'))
     },
@@ -9,6 +9,15 @@ const storage = multer.diskStorage({
         const userId = req.user.id;
         cb(null, userId + '_' + Date.now() + path.extname(file.originalname))
     },
+})
+
+const storageAttachment = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, path.join(__dirname, '../../uploads/attachments/'))
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now()+ '_' + file.originalname.replace(/\s/g, '_'))
+    }
 })
 
 const fileFilter = function (req, file, cb) {
@@ -20,10 +29,15 @@ const fileFilter = function (req, file, cb) {
     }
 }
 
-const upload = multer({
-    storage,
+const uploadAvatar = multer({
+    storage: storageAvatar,
     fileFilter,
     limits: { fileSize: 2 * 1024 * 1024 }
 })
 
-module.exports = upload.single('avatar');
+const uploadAttachment = multer({
+    storage: storageAttachment,
+    limits: { fileSize: 10 * 1024 * 1024 }
+})
+
+module.exports = {uploadAvatar, uploadAttachment}

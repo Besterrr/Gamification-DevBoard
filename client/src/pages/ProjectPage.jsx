@@ -19,6 +19,24 @@ const ProjectPage = () => {
     const [filterPriority, setFilterPriority] = useState("");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [expandedTaskId, setExpandedTaskId] = useState(null);
+    const [attachments, setAttachments] = useState({[id]: []});
+
+   async function fetchAttachments(taskId) {
+        const response = await apiFetch(`http://localhost:5000/api/tasks/${taskId}/attachments`, {
+            method: 'GET',},
+            accessToken,
+            refreshToken,
+            updateTokens,
+            logout)
+        const data = await response.json();
+        if(!response.ok) {
+            setError('Ошибка загрузки данных');
+            setLoading(false);
+            return;
+        }
+        setAttachments(prev => ({...prev, [taskId]: data.attachments}));
+    }
 
     const fetchTasks = useCallback(async (search, filterStatus, filterPriority, page) => {
         const params = new URLSearchParams();
@@ -91,6 +109,35 @@ const ProjectPage = () => {
         setTasks(tasks => [...tasks, data.task]);
         const statsData = await fetchProjectStats(id, accessToken, refreshToken, updateTokens, logout);
         setStats(statsData.stats);
+    }
+
+    async function handleTaskClick(taskId){
+        if(expandedTaskId === taskId){
+            setExpandedTaskId(null);
+            return
+        }
+        setExpandedTaskId(taskId);
+        await fetchAttachments(taskId);
+    }
+
+    async function handleUploadFile(taskId, file){
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiFetch(`http://localhost:5000/api/tasks/${taskId}/attachments`,{
+            method: 'POST',
+            body: formData
+            },
+            accessToken,
+            refreshToken,
+            updateTokens,
+            logout)
+        const data = await response.json();
+        if(!response.ok) {
+            setError(data.message);
+            setLoading(false);
+            return;
+        }
+        await fetchAttachments(taskId);
     }
 
     async function handleDeleteTask(removedId) {
@@ -177,13 +224,28 @@ const ProjectPage = () => {
                 </select>
                 {tasks.map(task => (
                     <div key = {task.id}>
-                        <p>{task.title}: {task.priority}</p>
-                        <select name="status" id="status" value={task.status} onChange={(e) => handleUpdateTask(task.id, e.target.value)}>
-                            <option value="todo">todo</option>
-                            <option value="inProgress">in progress</option>
-                            <option value="done">done</option>
-                        </select>
-                        <button onClick={() => handleDeleteTask(task.id)}>❌</button>
+                        <div onClick={()=> handleTaskClick(task.id)}>
+                            <p>{task.title}: {task.priority}</p>
+                            <select onChange={(e) => handleUpdateTask(task.id, e.target.value)} onClick={(e) => e.stopPropagation()}>
+                                <option value="todo">todo</option>
+                                <option value="inProgress">in progress</option>
+                                <option value="done">done</option>
+                            </select>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>❌</button>
+                        </div>
+                        <div>
+                        {expandedTaskId === task.id &&
+                            <div>
+                                {(attachments[task.id] || []).map(attachment => (
+                                    <div key={attachment.id}>
+                                        <p>{attachment.original_name}</p>
+                                    </div>
+                                ))}
+                                <input type="file" onChange={(e) => handleUploadFile(task.id, e.target.files[0])} />
+                            </div>
+
+                        }
+                        </div>
                     </div>
                 ))}
             </div>

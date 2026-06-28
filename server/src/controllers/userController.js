@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-async function uploadAvatar(req, res){
+async function uploadTheAvatar(req, res){
     try{
         if(!req.file){
             res.status(400).json({message: 'Файл не найден'});
@@ -16,4 +16,4 @@ async function uploadAvatar(req, res){
     }
 }
 
-module.exports = {uploadAvatar};
+module.exports = {uploadTheAvatar};
