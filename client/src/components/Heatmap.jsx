@@ -1,96 +1,110 @@
 import {useEffect, useState} from "react";
 import {fetchUserStats} from "../api/apiClient.js";
-import {useAuth} from "../hooks/useAuth.js";
+import './Heatmap.scss';
 
 const levelColors = {
-    0: '#ebedf0',
-    1: '#9be9a8',
-    2: '#40c463',
-    3: '#30a14e',
-    4: '#216e39',
+    0: '#2d2d3a',
+    1: '#3b1f6e',
+    2: '#6b35c4',
+    3: '#9b4dff',
+    4: '#c084fc',
 };
 
 const dayLabels = ['Пн', '', 'Ср', '', 'Пт', '', ''];
-
 const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
-function getLevel(count){
-    if(count === 0) return 0;
-    else if(count === 1) return 1
-    else if(count === 2) return 2
-    else if(count === 3 || count === 4) return 3
-    else if(count >= 5) return 4;
+function getLevel(count) {
+    if (count === 0) return 0;
+    if (count === 1) return 1;
+    if (count === 2) return 2;
+    if (count <= 4) return 3;
+    return 4;
 }
 
-function groupByWeeks(days){
+function groupByWeeks(days) {
     const size = 7;
     return days.reduce((chunks, item, index) =>
         index % size === 0 ? [...chunks, days.slice(index, index + size)] : chunks, []);
 }
 
-function getMonthLabel(week, prevWeek){
+function getMonthLabel(week, prevWeek) {
     const currentMonth = new Date(week[0].date).getMonth();
-    if(!prevWeek) return monthLabels[currentMonth];
+    if (!prevWeek) return monthLabels[currentMonth];
     const prevMonth = new Date(prevWeek[0].date).getMonth();
     return currentMonth !== prevMonth ? monthLabels[currentMonth] : '';
 }
 
 const Heatmap = () => {
     const [stats, setStats] = useState([]);
-    const {logout, accessToken, refreshToken, updateTokens} = useAuth();
 
     useEffect(() => {
-        async function fetchHalfOfYearData(){
+        async function fetchHalfOfYearData() {
             const days = 182;
             const date = new Date();
             date.setDate(date.getDate() - days + 1);
             const dayOfTheWeek = date.getDay();
             const extraDays = ((dayOfTheWeek - 1) + 7) % 7;
             const countOfDays = days + extraDays;
-            const data = await fetchUserStats(countOfDays, accessToken, refreshToken, updateTokens, logout);
+            const data = await fetchUserStats(countOfDays);
             setStats(data.activity);
         }
         fetchHalfOfYearData();
-    }, [accessToken, refreshToken, updateTokens, logout]);
+    }, []);
 
-    if(stats.length === 0) return null;
+    if (stats.length === 0) return null;
 
     const weeks = groupByWeeks(stats);
+    const totalCount = stats.reduce((sum, day) => sum + day.count, 0);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', gap: '3px', marginLeft: '24px' }}>
-                {weeks.map((week, i) => (
-                    <div key={i} style={{ width: '12px', fontSize: '10px', color: '#888' }}>
-                        {getMonthLabel(week, weeks[i - 1])}
-                    </div>
-                ))}
+        <div className="heatmap">
+            <div className="heatmap__header">
+                <span className="heatmap__title">Недавняя активность</span>
+                <span className="heatmap__subtitle">Последние 6 месяцев</span>
             </div>
-            <div style={{ display: 'flex', gap: '3px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '20px' }}>
-                    {dayLabels.map((label, i) => (
-                        <div key={i} style={{ height: '12px', fontSize: '10px', color: '#888' }}>
-                            {label}
+
+            <div className="heatmap__grid-wrapper">
+                <div className="heatmap__month-labels">
+                    {weeks.map((week, i) => (
+                        <div key={i} className="heatmap__month-label">
+                            {getMonthLabel(week, weeks[i - 1])}
                         </div>
                     ))}
                 </div>
-                <div style={{ display: 'flex', gap: '3px' }}>
-                    {weeks.map((week, weekIndex) => (
-                        <div key={weekIndex} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            {week.map((day) => (
-                                <div
-                                    key={day.date}
-                                    title={`${day.date}: ${day.count}`}
-                                    style={{
-                                        width: '12px',
-                                        height: '12px',
-                                        borderRadius: '2px',
-                                        background: levelColors[getLevel(day.count)]
-                                    }}
-                                />
-                            ))}
-                        </div>
+
+                <div className="heatmap__body">
+                    <div className="heatmap__day-labels">
+                        {dayLabels.map((label, i) => (
+                            <div key={i} className="heatmap__day-label">{label}</div>
+                        ))}
+                    </div>
+
+                    <div className="heatmap__weeks">
+                        {weeks.map((week, weekIndex) => (
+                            <div key={weekIndex} className="heatmap__week">
+                                {week.map((day) => (
+                                    <div
+                                        key={day.date}
+                                        className="heatmap__cell"
+                                        title={`${day.date}: ${day.count} задач`}
+                                        style={{ background: levelColors[getLevel(day.count)] }}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="heatmap__footer">
+                <span>{totalCount} выполненных задач</span>
+                <div className="heatmap__legend">
+                    <span>0</span>
+                    {[0,1,2,3,4].map(level => (
+                        <div key={level} className="heatmap__legend-cell"
+                             style={{ background: levelColors[level] }}/>
                     ))}
+                    <span>5+</span>
                 </div>
             </div>
         </div>

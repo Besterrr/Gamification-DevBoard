@@ -6,6 +6,7 @@ import ActivityChart from "../components/ActivityChart.jsx";
 import Heatmap from "../components/Heatmap.jsx";
 import api from "../api/axiosClient.js";
 import {useDarkMode} from "../hooks/useDarkMode.js";
+import './DashboardPage.scss';
 
 const DashboardPage = () => {
     const {logout} = useAuth();

@@ -1,0 +1,109 @@
+.heatmap {
+  background: #1a1a2e;
+  border: 1px solid #2e303a;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  &__subtitle {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  &__grid-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__month-labels {
+    display: flex;
+    gap: 3px;
+    margin-left: 28px;
+  }
+
+  &__month-label {
+    width: 14px;
+    font-size: 10px;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  &__body {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__day-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 24px;
+  }
+
+  &__day-label {
+    height: 14px;
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 14px;
+  }
+
+  &__weeks {
+    display: flex;
+    gap: 3px;
+  }
+
+  &__week {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  &__legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #6b7280;
+  }
+
+  &__legend-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+}
