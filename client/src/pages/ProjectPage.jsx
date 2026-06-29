@@ -3,20 +3,14 @@ import {useCallback, useEffect, useState} from "react";
 import {fetchProjectStats} from "../api/apiClient.js";
 import {useAuth} from "../hooks/useAuth.js";
 import AddTasksForm from "../components/AddTasksForm.jsx";
+import Dropdown from "../components/Dropdown.jsx";
 import api from "../api/axiosClient.js";
+import {priorityLabels, priorityOptions, statusOptions} from "../constants/taskConstants.js";
 import './ProjectPage.scss';
 
-const priorityLabels = {
-    low: 'низкий',
-    medium: 'средний',
-    high: 'высокий',
-};
-
-const statusLabels = {
-    todo: 'к выполнению',
-    inProgress: 'в работе',
-    done: 'готово',
-};
+const statusFilterOptions = statusOptions;
+const priorityFilterOptions = priorityOptions;
+const taskStatusOptions = statusOptions;
 
 function getDeadlineUrgency(deadline, status) {
     if (!deadline) return null;
@@ -98,8 +92,7 @@ const ProjectPage = () => {
 
     async function handleCreateTask(title, description, priority, deadline) {
         try{
-            const isoDeadline = deadline ? new Date(deadline).toISOString() : null;
-            const response = await api.post(`/api/projects/${id}/tasks`,{title, description, priority, deadline: isoDeadline});
+            const response = await api.post(`/api/projects/${id}/tasks`,{title, description, priority, deadline});
             setShowForm(false)
             setTasks(tasks => [...tasks, response.data.task]);
             const statsData = await fetchProjectStats(id)
@@ -207,18 +200,28 @@ const ProjectPage = () => {
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 />
-                <select className="project-page__select" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}>
-                    <option value="">Все статусы</option>
-                    <option value="todo">К выполнению</option>
-                    <option value="inProgress">В работе</option>
-                    <option value="done">Готово</option>
-                </select>
-                <select className="project-page__select" value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}>
-                    <option value="">Все приоритеты</option>
-                    <option value="low">Низкий</option>
-                    <option value="medium">Средний</option>
-                    <option value="high">Высокий</option>
-                </select>
+                <Dropdown
+                    value={filterStatus}
+                    options={statusFilterOptions}
+                    placeholder="Все статусы"
+                    onChange={(val) => { setFilterStatus(val); setPage(1); }}
+                />
+                <Dropdown
+                    value={filterPriority}
+                    options={priorityFilterOptions}
+                    placeholder="Все приоритеты"
+                    onChange={(val) => { setFilterPriority(val); setPage(1); }}
+                />
+                {(search || filterStatus || filterPriority) &&
+                    <button
+                        className="project-page__reset-filters"
+                        onClick={() => { setSearch(''); setFilterStatus(''); setFilterPriority(''); setPage(1); }}
+                        aria-label="Сбросить фильтры"
+                        title="Сбросить фильтры"
+                    >
+                        ✕
+                    </button>
+                }
                 <button className="project-page__add-btn" onClick={() => setShowForm(true)}>+ Новая задача</button>
             </div>
 
@@ -243,15 +246,12 @@ const ProjectPage = () => {
                                     </div>
 
                                     <div className="task-card__controls" onClick={(e) => e.stopPropagation()}>
-                                        <select
-                                            className="task-card__status-select"
+                                        <Dropdown
                                             value={task.status}
-                                            onChange={(e) => handleUpdateTask(task.id, e.target.value)}
-                                        >
-                                            <option value="todo">{statusLabels.todo}</option>
-                                            <option value="inProgress">{statusLabels.inProgress}</option>
-                                            <option value="done">{statusLabels.done}</option>
-                                        </select>
+                                            options={taskStatusOptions}
+                                            onChange={(val) => handleUpdateTask(task.id, val)}
+                                            colorByValue
+                                        />
                                         <button
                                             className="task-card__delete"
                                             onClick={() => handleDeleteTask(task.id)}

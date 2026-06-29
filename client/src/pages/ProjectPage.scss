@@ -91,6 +91,26 @@
     flex: 0 0 auto;
   }
 
+  &__reset-filters {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.3);
+      opacity: 1;
+    }
+  }
+
   &__add-btn {
     margin-left: auto;
     white-space: nowrap;
@@ -143,7 +163,9 @@
   }
 
   &--done {
-    opacity: 0.6;
+    .task-card__main {
+      opacity: 0.55;
+    }
   }
 
   &__row {
@@ -157,9 +179,10 @@
   &__main {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
     gap: 12px;
     min-width: 0;
+    flex-wrap: wrap;
+    transition: opacity 0.2s;
   }
 
   &__title {
@@ -238,6 +261,50 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+
+    .dropdown__value {
+      &--todo {
+        color: var(--text);
+      }
+
+      &--inProgress {
+        color: #3b82f6;
+      }
+
+      &--done {
+        color: #22c55e;
+      }
+    }
+
+    .dropdown__option {
+      &--todo {
+        color: var(--text);
+
+        &.dropdown__option--active {
+          color: var(--text);
+        }
+      }
+
+      &--inProgress {
+        color: #3b82f6;
+
+        &.dropdown__option--active {
+          color: #3b82f6;
+        }
+      }
+
+      &--done {
+        color: #22c55e;
+
+        &.dropdown__option--active {
+          color: #22c55e;
+        }
+      }
+
+      &.dropdown__option--active {
+        font-weight: 700;
+      }
+    }
   }
 
   &__status-select {
@@ -353,12 +420,30 @@
   }
 
   form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
     button {
       margin-top: 4px;
     }
+  }
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0.85;
+  }
+
+  .dropdown {
+    width: 100%;
   }
 }

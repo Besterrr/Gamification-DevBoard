@@ -1,4 +1,6 @@
 import {useState} from "react";
+import Dropdown from "./Dropdown.jsx";
+import {priorityOptions} from "../constants/taskConstants.js";
 
 const AddTasksForm = ({addTask}) => {
     const [title, setTitle] = useState('');
@@ -7,18 +9,49 @@ const AddTasksForm = ({addTask}) => {
     const [deadline, setDeadline] = useState('');
 
     return (
-        <form onSubmit={(e) => {
+        <form className="task-form" onSubmit={(e) => {
             e.preventDefault();
             addTask(title, description, priority, deadline);
         }}>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}/>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}/>
-            <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)}/>
-            <select name="priority" id="prio" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-            </select>
+            <label className="task-form__field">
+                <span className="task-form__label">Название</span>
+                <input
+                    type="text"
+                    placeholder="Например, сверстать лендинг"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                />
+            </label>
+
+            <label className="task-form__field">
+                <span className="task-form__label">Описание</span>
+                <input
+                    type="text"
+                    placeholder="Необязательно"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                />
+            </label>
+
+            <label className="task-form__field">
+                <span className="task-form__label">Дедлайн</span>
+                <input
+                    type="datetime-local"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                />
+            </label>
+
+            <div className="task-form__field">
+                <span className="task-form__label">Приоритет</span>
+                <Dropdown
+                    value={priority}
+                    options={priorityOptions}
+                    onChange={setPriority}
+                />
+            </div>
+
             <button type="submit">Создать</button>
         </form>
     );
