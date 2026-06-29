@@ -22,13 +22,19 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'http://127.0.0.1:5173',
+        origin: ['http://127.0.0.1:5173',
+                'gamification-dev-board.vercel.app'],
         methods: ['GET', 'POST']
     }
 });
 
 
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://127.0.0.1:5173',
+        'gamification-dev-board.vercel.app'
+    ]
+}));
 app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
