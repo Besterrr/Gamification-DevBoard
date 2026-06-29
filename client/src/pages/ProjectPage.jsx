@@ -4,6 +4,40 @@ import {fetchProjectStats} from "../api/apiClient.js";
 import {useAuth} from "../hooks/useAuth.js";
 import AddTasksForm from "../components/AddTasksForm.jsx";
 import api from "../api/axiosClient.js";
+import './ProjectPage.scss';
+
+const priorityLabels = {
+    low: 'низкий',
+    medium: 'средний',
+    high: 'высокий',
+};
+
+const statusLabels = {
+    todo: 'к выполнению',
+    inProgress: 'в работе',
+    done: 'готово',
+};
+
+function getDeadlineUrgency(deadline, status) {
+    if (!deadline) return null;
+    if (status === 'done') return 'done';
+
+    const diffMs = new Date(deadline).getTime() - Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    if (diffMs < 0) return 'overdue';
+    if (diffMs <= oneDayMs) return 'soon';
+    return 'ok';
+}
+
+function formatDeadline(deadline) {
+    return new Date(deadline).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
 
 const ProjectPage = () => {
     const navigate = useNavigate();
@@ -23,14 +57,14 @@ const ProjectPage = () => {
     const [expandedTaskId, setExpandedTaskId] = useState(null);
     const [attachments, setAttachments] = useState({[id]: []});
 
-   async function fetchAttachments(taskId) {
-       try{
-           const response = await api.get(`/api/tasks/${taskId}/attachments`)
-           setAttachments(prev => ({...prev, [taskId]: response.data.attachments}));
-       }catch (e) {
-           setError(e.message);
-           setLoading(false);
-       }
+    async function fetchAttachments(taskId) {
+        try{
+            const response = await api.get(`/api/tasks/${taskId}/attachments`)
+            setAttachments(prev => ({...prev, [taskId]: response.data.attachments}));
+        }catch (e) {
+            setError(e.message);
+            setLoading(false);
+        }
     }
 
     const fetchTasks = useCallback(async (search, filterStatus, filterPriority, page) => {
@@ -62,9 +96,10 @@ const ProjectPage = () => {
         fetchTasks(search, filterStatus, filterPriority, page);
     }, [fetchTasks, search, filterStatus, filterPriority, page]);
 
-    async function handleCreateTask(title, description, priority) {
+    async function handleCreateTask(title, description, priority, deadline) {
         try{
-            const response = await api.post(`/api/projects/${id}/tasks`,{title, description, priority});
+            const isoDeadline = deadline ? new Date(deadline).toISOString() : null;
+            const response = await api.post(`/api/projects/${id}/tasks`,{title, description, priority, deadline: isoDeadline});
             setShowForm(false)
             setTasks(tasks => [...tasks, response.data.task]);
             const statsData = await fetchProjectStats(id)
@@ -135,72 +170,138 @@ const ProjectPage = () => {
     }
 
     if(loading){
-        return <p>Загрузка...</p>
+        return <p className="project-page__loading">Загрузка...</p>
     }
+    const total = Number(stats.total) || 0;
+    const completed = Number(stats.completed) || 0;
+    const progressPercent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
     return (
-        <>
-            <div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                <h1>{project.title}</h1>
-                <p>{project.description}</p>
-                <p>Задач всего: {stats.total} Выполнено: {stats.completed}</p>
+        <div className="project-page">
+            <header className="project-page__header">
+                <button className="project-page__back" onClick={() => navigate('/')}>← Назад</button>
+
+                <div className="project-page__heading">
+                    <h1>{project.title}</h1>
+                    {project.description && <p className="project-page__description">{project.description}</p>}
+                </div>
+
+                <div className="project-page__progress">
+                    <div className="project-page__progress-labels">
+                        <span>Выполнено {completed} из {total}</span>
+                        <span>{progressPercent}%</span>
+                    </div>
+                    <div className="project-page__progress-bar">
+                        <div className="project-page__progress-fill" style={{width: `${progressPercent}%`}}/>
+                    </div>
+                </div>
+            </header>
+
+            {error && <p className="project-page__error">{error}</p>}
+
+            <div className="project-page__toolbar">
                 <input
+                    className="project-page__search"
                     type="text"
                     placeholder="Поиск по задачам"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 />
-                <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}>
+                <select className="project-page__select" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}>
                     <option value="">Все статусы</option>
-                    <option value="todo">todo</option>
-                    <option value="inProgress">in progress</option>
-                    <option value="done">done</option>
+                    <option value="todo">К выполнению</option>
+                    <option value="inProgress">В работе</option>
+                    <option value="done">Готово</option>
                 </select>
-
-                <select value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}>
+                <select className="project-page__select" value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}>
                     <option value="">Все приоритеты</option>
-                    <option value="low">low</option>
-                    <option value="medium">medium</option>
-                    <option value="high">high</option>
+                    <option value="low">Низкий</option>
+                    <option value="medium">Средний</option>
+                    <option value="high">Высокий</option>
                 </select>
-                {tasks.map(task => (
-                    <div key = {task.id}>
-                        <div onClick={()=> handleTaskClick(task.id)}>
-                            <p>{task.title}: {task.priority}</p>
-                            <select onChange={(e) => handleUpdateTask(task.id, e.target.value)} onClick={(e) => e.stopPropagation()}>
-                                <option value="todo">todo</option>
-                                <option value="inProgress">in progress</option>
-                                <option value="done">done</option>
-                            </select>
-                            <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>❌</button>
-                        </div>
-                        <div>
-                        {expandedTaskId === task.id &&
-                            <div>
-                                {(attachments[task.id] || []).map(attachment => (
-                                    <div key={attachment.id}>
-                                        <p>{attachment.original_name}</p>
-                                    </div>
-                                ))}
-                                <input type="file" onChange={(e) => handleUploadFile(task.id, e.target.files[0])} />
-                            </div>
+                <button className="project-page__add-btn" onClick={() => setShowForm(true)}>+ Новая задача</button>
+            </div>
 
-                        }
+            {tasks.length === 0
+                ? <p className="project-page__empty">Задач пока нет — добавь первую</p>
+                : <ul className="task-list">
+                    {tasks.map(task => {
+                        const urgency = getDeadlineUrgency(task.deadline, task.status);
+                        return (
+                            <li key={task.id} className={`task-card ${task.status === 'done' ? 'task-card--done' : ''}`}>
+                                <div className="task-card__row" onClick={() => handleTaskClick(task.id)}>
+                                    <div className="task-card__main">
+                                        <span className={`task-card__priority task-card__priority--${task.priority}`}>
+                                            {priorityLabels[task.priority] || task.priority}
+                                        </span>
+                                        <span className="task-card__title">{task.title}</span>
+                                        {task.deadline &&
+                                            <span className={`task-card__deadline task-card__deadline--${urgency}`}>
+                                                🕒 {formatDeadline(task.deadline)}
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <div className="task-card__controls" onClick={(e) => e.stopPropagation()}>
+                                        <select
+                                            className="task-card__status-select"
+                                            value={task.status}
+                                            onChange={(e) => handleUpdateTask(task.id, e.target.value)}
+                                        >
+                                            <option value="todo">{statusLabels.todo}</option>
+                                            <option value="inProgress">{statusLabels.inProgress}</option>
+                                            <option value="done">{statusLabels.done}</option>
+                                        </select>
+                                        <button
+                                            className="task-card__delete"
+                                            onClick={() => handleDeleteTask(task.id)}
+                                            aria-label="Удалить задачу"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {expandedTaskId === task.id &&
+                                    <div className="task-card__attachments">
+                                        {(attachments[task.id] || []).length === 0
+                                            ? <p className="task-card__no-files">Файлов пока нет</p>
+                                            : (attachments[task.id] || []).map(attachment => (
+                                                <div key={attachment.id} className="task-card__file">
+                                                    📎 {attachment.original_name}
+                                                </div>
+                                            ))
+                                        }
+                                        <label className="task-card__upload">
+                                            Прикрепить файл
+                                            <input type="file" onChange={(e) => handleUploadFile(task.id, e.target.files[0])} />
+                                        </label>
+                                    </div>
+                                }
+                            </li>
+                        );
+                    })}
+                </ul>
+            }
+
+            <div className="project-page__pagination">
+                <button onClick={() => setPage(p => p - 1)} disabled={page === 1}>← Назад</button>
+                <span>{page} / {totalPages}</span>
+                <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>Вперёд →</button>
+            </div>
+
+            {showForm &&
+                <div className="modal-overlay" onClick={() => setShowForm(false)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal__header">
+                            <h2>Новая задача</h2>
+                            <button className="modal__close" onClick={() => setShowForm(false)} aria-label="Закрыть">✕</button>
                         </div>
+                        <AddTasksForm addTask={handleCreateTask} showForm={true}/>
                     </div>
-                ))}
-            </div>
-                <button onClick={()=> setShowForm(true)}>Добавить задачу</button>
-                <button onClick={() => navigate('/')}>Назад</button>
-            <div>
-                {showForm && <AddTasksForm addTask = {handleCreateTask} showForm={true}/>}
-                {showForm && <button onClick={() => setShowForm(false)}>Отмена</button>}
-            </div>
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 1}>Назад</button>
-            <span>{page} / {totalPages}</span>
-            <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>Вперёд</button>
-        </>
+                </div>
+            }
+        </div>
     );
 };
 

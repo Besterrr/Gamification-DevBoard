@@ -1,6 +1,6 @@
 .heatmap {
-  background: #1a1a2e;
-  border: 1px solid #2e303a;
+  background: var(--social-bg);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 20px 24px;
   display: inline-flex;
@@ -16,12 +16,13 @@
   &__title {
     font-size: 16px;
     font-weight: 600;
-    color: #f3f4f6;
+    color: var(--text-h);
   }
 
   &__subtitle {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--text);
+    opacity: 0.7;
   }
 
   &__grid-wrapper {
@@ -39,7 +40,8 @@
   &__month-label {
     width: 14px;
     font-size: 10px;
-    color: #6b7280;
+    color: var(--text);
+    opacity: 0.7;
     white-space: nowrap;
   }
 
@@ -58,7 +60,8 @@
   &__day-label {
     height: 14px;
     font-size: 10px;
-    color: #6b7280;
+    color: var(--text);
+    opacity: 0.7;
     line-height: 14px;
   }
 
@@ -83,6 +86,12 @@
     &:hover {
       opacity: 0.8;
     }
+
+    &--level-0 { background: var(--heat-0); }
+    &--level-1 { background: var(--heat-1); }
+    &--level-2 { background: var(--heat-2); }
+    &--level-3 { background: var(--heat-3); }
+    &--level-4 { background: var(--heat-4); }
   }
 
   &__footer {
@@ -90,7 +99,8 @@
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    color: #9ca3af;
+    color: var(--text);
+    opacity: 0.85;
   }
 
   &__legend {
@@ -98,12 +108,19 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: #6b7280;
+    color: var(--text);
+    opacity: 0.7;
   }
 
   &__legend-cell {
     width: 14px;
     height: 14px;
     border-radius: 3px;
+
+    &--level-0 { background: var(--heat-0); }
+    &--level-1 { background: var(--heat-1); }
+    &--level-2 { background: var(--heat-2); }
+    &--level-3 { background: var(--heat-3); }
+    &--level-4 { background: var(--heat-4); }
   }
 }

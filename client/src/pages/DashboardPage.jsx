@@ -88,7 +88,7 @@ const DashboardPage = () => {
             return
         }
         const formData = new FormData();
-        formData.append('avatar', file);
+        formData.append('file', file);
         try{
             const response = await api.post(`/api/users/avatar`, formData)
             setAvatar(response.data.avatarUrl);

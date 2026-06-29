@@ -2,7 +2,17 @@ import axios from 'axios';
 
 const api = axios.create({ baseURL: 'http://localhost:5000' });
 
+let lastTokens = null;
+
 export function setupInterceptors(accessToken, refreshToken, updateTokens, logout) {
+    const tokensChanged =
+        !lastTokens ||
+        lastTokens.accessToken !== accessToken ||
+        lastTokens.refreshToken !== refreshToken;
+
+    if (!tokensChanged) return;
+    lastTokens = { accessToken, refreshToken };
+
     api.interceptors.request.clear();
     api.interceptors.response.clear();
 

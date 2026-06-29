@@ -56,7 +56,10 @@ async function createTask(req, res){
         const description = req.body.description;
         const priority = req.body.priority;
         const status = req.body.status || 'todo';
-        const deadline = req.body.deadline;
+        let deadline = req.body.deadline;
+        if(deadline === ''){
+            deadline = null;
+        }
         if(!title){
             return res.status(400).json({message:'Нет такого заголовка'});
         }

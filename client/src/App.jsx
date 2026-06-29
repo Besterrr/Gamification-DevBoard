@@ -23,7 +23,6 @@ function App() {
 
         async function fetchUser() {
             const response = await api.get('/api/auth/me');
-            console.log('userData:', response.data);
             socket.emit('register', response.data.user.id);
         }
         fetchUser();

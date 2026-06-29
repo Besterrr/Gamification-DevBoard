@@ -2,14 +2,6 @@ import {useEffect, useState} from "react";
 import {fetchUserStats} from "../api/apiClient.js";
 import './Heatmap.scss';
 
-const levelColors = {
-    0: '#2d2d3a',
-    1: '#3b1f6e',
-    2: '#6b35c4',
-    3: '#9b4dff',
-    4: '#c084fc',
-};
-
 const dayLabels = ['Пн', '', 'Ср', '', 'Пт', '', ''];
 const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
@@ -82,14 +74,16 @@ const Heatmap = () => {
                     <div className="heatmap__weeks">
                         {weeks.map((week, weekIndex) => (
                             <div key={weekIndex} className="heatmap__week">
-                                {week.map((day) => (
-                                    <div
-                                        key={day.date}
-                                        className="heatmap__cell"
-                                        title={`${day.date}: ${day.count} задач`}
-                                        style={{ background: levelColors[getLevel(day.count)] }}
-                                    />
-                                ))}
+                                {week.map((day) => {
+                                    const level = getLevel(day.count);
+                                    return (
+                                        <div
+                                            key={day.date}
+                                            className={`heatmap__cell heatmap__cell--level-${level}`}
+                                            title={`${day.date}: ${day.count} задач`}
+                                        />
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>
@@ -100,9 +94,8 @@ const Heatmap = () => {
                 <span>{totalCount} выполненных задач</span>
                 <div className="heatmap__legend">
                     <span>0</span>
-                    {[0,1,2,3,4].map(level => (
-                        <div key={level} className="heatmap__legend-cell"
-                             style={{ background: levelColors[level] }}/>
+                    {[0, 1, 2, 3, 4].map(level => (
+                        <div key={level} className={`heatmap__legend-cell heatmap__legend-cell--level-${level}`}/>
                     ))}
                     <span>5+</span>
                 </div>

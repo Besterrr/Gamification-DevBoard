@@ -24,6 +24,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  --heat-0: #ece9f5;
+  --heat-1: #d6c2f7;
+  --heat-2: #b685f0;
+  --heat-3: #9b4dff;
+  --heat-4: #aa3bff;
+
   @media (max-width: 1024px) {
     font-size: 16px;
   }
@@ -41,6 +47,12 @@
   --accent-border: rgba(192, 132, 252, 0.5);
   --social-bg: rgba(47, 48, 58, 0.5);
   --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+  --heat-0: #2d2d3a;
+  --heat-1: #3b1f6e;
+  --heat-2: #6b35c4;
+  --heat-3: #9b4dff;
+  --heat-4: #c084fc;
 }
 
 body {
