@@ -73,6 +73,7 @@ const AchievementsPage = () => {
                     </div>
                 </section>
             )}
+            <ThemeToggle />
         </div>
     );
 };
@@ -95,7 +96,6 @@ function AchievementCard({ achievement }) {
                     )}
                 </div>
             </div>
-            <ThemeToggle />
         </div>
     );
 }
