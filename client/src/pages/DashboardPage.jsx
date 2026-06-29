@@ -5,8 +5,9 @@ import Notifications from "../components/Notifications.jsx";
 import ActivityChart from "../components/ActivityChart.jsx";
 import Heatmap from "../components/Heatmap.jsx";
 import api from "../api/axiosClient.js";
-import {useDarkMode} from "../hooks/useDarkMode.js";
 import './DashboardPage.scss';
+import Loader from "../components/Loader.jsx";
+import ThemeToggle from "../components/ThemeToggle.jsx";
 
 const DashboardPage = () => {
     const {logout} = useAuth();
@@ -21,7 +22,6 @@ const DashboardPage = () => {
     const [level, setLevel] = useState(1);
     const [username, setUsername] = useState('User');
     const [avatar, setAvatar] = useState(null);
-    const { isDark, toggleDark } = useDarkMode();
 
     useEffect(() => {
         async function fetchProjects() {
@@ -98,17 +98,12 @@ const DashboardPage = () => {
         }
     }
 
-    if(loading){
-        return <p>Загрузка...</p>
-    }
+    if (loading) return <Loader fullscreen />;
 
     return (
         <div className="dashboard">
             <header className="dashboard__header">
                 <h1 className="dashboard__title">DevBoard</h1>
-                <button className="theme-toggle" onClick={toggleDark}>
-                    {isDark ? '☀️' : '🌙'}
-                </button>
             </header>
 
             <div className="dashboard__profile">
@@ -170,6 +165,7 @@ const DashboardPage = () => {
                 <hr/>
                 <Heatmap/>
             </div>
+            <ThemeToggle />
         </div>
     );
 };

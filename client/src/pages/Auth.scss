@@ -1,0 +1,135 @@
+.auth {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+
+  &__card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--social-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__logo {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    color: var(--text);
+    opacity: 0.75;
+    margin: 0;
+  }
+
+  &__error {
+    font-size: 13px;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0.85;
+    font-weight: 500;
+  }
+
+  &__input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text-h);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &::placeholder {
+      color: var(--text);
+      opacity: 0.4;
+    }
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-bg);
+    }
+  }
+
+  &__submit {
+    width: 100%;
+    margin-top: 4px;
+    padding: 11px 0;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.2px;
+
+    &:hover {
+      opacity: 0.88;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  &__switch {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0.75;
+    margin: 0;
+  }
+
+  &__link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

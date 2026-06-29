@@ -7,6 +7,8 @@ import Dropdown from "../components/Dropdown.jsx";
 import api from "../api/axiosClient.js";
 import {priorityLabels, priorityOptions, statusOptions} from "../constants/taskConstants.js";
 import './ProjectPage.scss';
+import Loader from "../components/Loader.jsx";
+import ThemeToggle from "../components/ThemeToggle.jsx";
 
 const statusFilterOptions = statusOptions;
 const priorityFilterOptions = priorityOptions;
@@ -162,9 +164,7 @@ const ProjectPage = () => {
         }
     }
 
-    if(loading){
-        return <p className="project-page__loading">Загрузка...</p>
-    }
+    if (loading) return <Loader fullscreen />;
     const total = Number(stats.total) || 0;
     const completed = Number(stats.completed) || 0;
     const progressPercent = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -173,7 +173,6 @@ const ProjectPage = () => {
         <div className="project-page">
             <header className="project-page__header">
                 <button className="project-page__back" onClick={() => navigate('/')}>← Назад</button>
-
                 <div className="project-page__heading">
                     <h1>{project.title}</h1>
                     {project.description && <p className="project-page__description">{project.description}</p>}
@@ -301,6 +300,7 @@ const ProjectPage = () => {
                     </div>
                 </div>
             }
+            <ThemeToggle />
         </div>
     );
 };
