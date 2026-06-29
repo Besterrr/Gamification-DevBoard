@@ -23,7 +23,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: ['http://127.0.0.1:5173',
-                'gamification-dev-board.vercel.app'],
+                'https://gamification-dev-board.vercel.app'],
         methods: ['GET', 'POST']
     }
 });
@@ -32,7 +32,7 @@ const io = new Server(server, {
 app.use(cors({
     origin: [
         'http://127.0.0.1:5173',
-        'gamification-dev-board.vercel.app'
+        'https://gamification-dev-board.vercel.app'
     ]
 }));
 app.use(express.json());
