@@ -109,7 +109,7 @@ const DashboardPage = () => {
             <div className="dashboard__profile">
                 <div className="dashboard__avatar">
                     {avatar
-                        ? <img src={'http://localhost:5000' + avatar} alt="Аватар"/>
+                        ? <img src={import.meta.env.VITE_API_URL + avatar} alt="Аватар"/>
                         : <span>👤</span>
                     }
                     <input type="file" accept="image/*" onChange={handleAvatarUpload} />
